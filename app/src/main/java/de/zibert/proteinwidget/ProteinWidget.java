@@ -118,11 +118,11 @@ public class ProteinWidget extends AppWidgetProvider {
             sr.setTextAlign(Paint.Align.RIGHT);
             c.drawText(datum, R, 24 * s, sr);
 
-            float y = 50 * s;
+            float y = 54 * s;
             y = row(c, s, L, R, y, "PROTEIN", pH, pZ, " g", GREEN, small);
-            y = row(c, s, L, R, y + 10 * s, "KCAL", kH, kZ, "", BLUE, small);
+            y = row(c, s, L, R, y + 28 * s, "KCAL", kH, kZ, "", BLUE, small);
 
-            float ty = y + 18 * s;
+            float ty = y + 22 * s;
             c.drawText("LETZTE 7 TAGE", L, ty, small);
             Paint lg = new Paint(sr);
             lg.setColor(BLUE);
@@ -131,7 +131,7 @@ public class ProteinWidget extends AppWidgetProvider {
             lg.setColor(GREEN);
             c.drawText("Protein  ", R - kw, ty, lg);
 
-            float top = ty + 10 * s, bottom = H - 22 * s, ch = bottom - top;
+            float top = ty + 9 * s, bottom = H - 24 * s, ch = bottom - top;
             Paint line = new Paint();
             line.setColor(Color.argb(45, 255, 255, 255));
             c.drawRect(L, top, R, top + 1.5f, line);
@@ -165,7 +165,7 @@ public class ProteinWidget extends AppWidgetProvider {
         c.drawText(label, L, y, small);
         Paint big = new Paint(Paint.ANTI_ALIAS_FLAG);
         big.setColor(col);
-        big.setTextSize(17 * s);
+        big.setTextSize(15 * s);
         big.setTypeface(Typeface.create("sans-serif", Typeface.BOLD));
         Paint rest = new Paint(Paint.ANTI_ALIAS_FLAG);
         rest.setColor(GREY);
@@ -175,10 +175,10 @@ public class ProteinWidget extends AppWidgetProvider {
         c.drawText(r, R - rw, y, rest);
         String v = String.valueOf(Math.round(val));
         c.drawText(v, R - rw - big.measureText(v), y, big);
-        float by = y + 10 * s;
+        float by = y + 7 * s;
         Paint p = new Paint(Paint.ANTI_ALIAS_FLAG);
         p.setColor(TRACK);
-        float bh = 10 * s;
+        float bh = 8 * s;
         c.drawRoundRect(new RectF(L, by, R, by + bh), bh / 2, bh / 2, p);
         p.setColor(col);
         c.drawRoundRect(new RectF(L, by, L + (R - L) * clamp(val / goal), by + bh), bh / 2, bh / 2, p);
