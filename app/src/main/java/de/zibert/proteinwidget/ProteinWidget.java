@@ -210,7 +210,7 @@ public class ProteinWidget extends AppWidgetProvider {
     static Bitmap render(String json, int W, int H, Theme th) {
         Bitmap b = Bitmap.createBitmap(W, H, Bitmap.Config.ARGB_8888);
         Canvas c = new Canvas(b);
-        float s = Math.min(W / 220f, H / 200f);
+        float s = Math.min(W / 220f, H / 218f);
         background(c, W, H, s, th);
 
         float L = 18 * s, R = W - 18 * s;
