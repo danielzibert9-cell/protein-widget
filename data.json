@@ -1,7 +1,7 @@
 {
- "datum": "25.11.",
- "proteinHeute": 86,
- "kcalHeute": 1231,
+ "datum": "26.11.",
+ "proteinHeute": 0,
+ "kcalHeute": 0,
  "proteinZiel": 140,
  "kcalZiel": 2500,
  "woche": [
@@ -42,10 +42,10 @@
   }
  ],
  "schnitt": {
-  "p": 139,
-  "k": 2207
+  "p": 146,
+  "k": 2153
  },
- "datumIso": "2026-11-25",
- "serie": 4,
- "zuletzt": "Spätzle"
+ "datumIso": "2026-11-26",
+ "serie": 5,
+ "zuletzt": ""
 }
