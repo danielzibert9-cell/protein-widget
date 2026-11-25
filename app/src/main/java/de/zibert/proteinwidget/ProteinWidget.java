@@ -84,7 +84,7 @@ public class ProteinWidget extends AppWidgetProvider {
     static float clamp(float x) { return Math.max(0.04f, Math.min(1f, x)); }
 
     static Bitmap render(String json) {
-        final int W = 600, H = 600;
+        final int W = 600, H = 470;
         float s = W / 220f;
         Bitmap b = Bitmap.createBitmap(W, H, Bitmap.Config.ARGB_8888);
         Canvas c = new Canvas(b);
@@ -98,7 +98,7 @@ public class ProteinWidget extends AppWidgetProvider {
         small.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
         small.setLetterSpacing(0.08f);
 
-        float L = 16 * s, R = W - 16 * s, BW = R - L;
+        float L = 16 * s, R = W - 16 * s;
 
         if (json == null) {
             c.drawText("LÄDT …  (tippen zum Aktualisieren)", L, 30 * s, small);
@@ -111,7 +111,6 @@ public class ProteinWidget extends AppWidgetProvider {
             float kH = (float) d.optDouble("kcalHeute", 0);
             float pZ = (float) d.optDouble("proteinZiel", 140);
             float kZ = (float) d.optDouble("kcalZiel", 2750);
-            JSONArray woche = d.optJSONArray("woche");
 
             c.drawText("HEUTE", L, 24 * s, small);
             Paint sr = new Paint(small);
@@ -119,40 +118,34 @@ public class ProteinWidget extends AppWidgetProvider {
             c.drawText(datum, R, 24 * s, sr);
 
             float y = 54 * s;
-            y = row(c, s, L, R, y, "PROTEIN", pH, pZ, " g", GREEN, small);
-            y = row(c, s, L, R, y + 28 * s, "KCAL", kH, kZ, "", BLUE, small);
+            y = row(c, s, L, R, y, "PROTEIN", pH, pZ, " g", small);
+            y = row(c, s, L, R, y + 28 * s, "KCAL", kH, kZ, "", small);
 
-            float ty = y + 22 * s;
-            c.drawText("LETZTE 7 TAGE", L, ty, small);
-            Paint lg = new Paint(sr);
-            lg.setColor(BLUE);
-            c.drawText("kcal", R, ty, lg);
-            float kw = lg.measureText("kcal");
-            lg.setColor(GREEN);
-            c.drawText("Protein  ", R - kw, ty, lg);
-
-            float top = ty + 9 * s, bottom = H - 24 * s, ch = bottom - top;
             Paint line = new Paint();
-            line.setColor(Color.argb(45, 255, 255, 255));
-            c.drawRect(L, top, R, top + 1.5f, line);
-            if (woche != null) {
-                int n = woche.length();
-                float slot = BW / Math.max(n, 1);
-                Paint day = new Paint(small);
-                day.setTextAlign(Paint.Align.CENTER);
-                Paint bar = new Paint(Paint.ANTI_ALIAS_FLAG);
-                float bw = Math.min(11 * s, slot * 0.32f);
-                for (int i = 0; i < n; i++) {
-                    JSONObject t = woche.getJSONObject(i);
-                    float cx = L + slot * i + slot / 2;
-                    float rp = clamp((float) t.optDouble("p", 0) / pZ);
-                    float rk = clamp((float) t.optDouble("k", 0) / kZ);
-                    bar.setColor(GREEN);
-                    c.drawRoundRect(new RectF(cx - bw - 1.5f * s, bottom - ch * rp, cx - 1.5f * s, bottom), 3 * s, 3 * s, bar);
-                    bar.setColor(BLUE);
-                    c.drawRoundRect(new RectF(cx + 1.5f * s, bottom - ch * rk, cx + bw + 1.5f * s, bottom), 3 * s, 3 * s, bar);
-                    c.drawText(t.optString("tag", ""), cx, bottom + 14 * s, day);
-                }
+            line.setColor(Color.argb(40, 255, 255, 255));
+            float ly = y + 14 * s;
+            c.drawRect(L, ly, R, ly + 1.5f, line);
+
+            JSONObject avg = d.optJSONObject("schnitt");
+            if (avg != null) {
+                float ty = ly + 18 * s;
+                c.drawText("Ø 7 TAGE", L, ty, small);
+                float ap = (float) avg.optDouble("p", 0);
+                float ak = (float) avg.optDouble("k", 0);
+                Paint v = new Paint(Paint.ANTI_ALIAS_FLAG);
+                v.setTextSize(11 * s);
+                v.setTypeface(Typeface.create("sans-serif", Typeface.BOLD));
+                v.setTextAlign(Paint.Align.RIGHT);
+                String kt = Math.round(ak) + " kcal";
+                v.setColor(ak >= kZ ? GREEN : BLUE);
+                c.drawText(kt, R, ty, v);
+                float kw = v.measureText(kt);
+                Paint dot = new Paint(small);
+                dot.setTextAlign(Paint.Align.RIGHT);
+                c.drawText("  ·  ", R - kw, ty, dot);
+                float dw = dot.measureText("  ·  ");
+                v.setColor(ap >= pZ ? GREEN : BLUE);
+                c.drawText(Math.round(ap) + " g", R - kw - dw, ty, v);
             }
         } catch (Exception e) {
             c.drawText("FEHLER BEIM LESEN", L, 30 * s, small);
@@ -161,8 +154,10 @@ public class ProteinWidget extends AppWidgetProvider {
     }
 
     static float row(Canvas c, float s, float L, float R, float y, String label,
-                     float val, float goal, String unit, int col, Paint small) {
-        c.drawText(label, L, y, small);
+                     float val, float goal, String unit, Paint small) {
+        boolean done = val >= goal;
+        int col = done ? GREEN : BLUE;
+        c.drawText(done ? label + "  ✓" : label, L, y, small);
         Paint big = new Paint(Paint.ANTI_ALIAS_FLAG);
         big.setColor(col);
         big.setTextSize(15 * s);
