@@ -90,13 +90,19 @@ public class ProteinWidget extends AppWidgetProvider {
         PendingIntent pi = PendingIntent.getBroadcast(ctx, 1, i,
             PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         am.setAndAllowWhileIdle(AlarmManager.RTC, c.getTimeInMillis(), pi);
+        // alle ~15 Minuten neue Werte holen, ohne Tippen
+        PendingIntent poll = PendingIntent.getBroadcast(ctx, 2,
+            new Intent(ctx, ProteinWidget.class).setAction(ACTION_REFRESH),
+            PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        am.setInexactRepeating(AlarmManager.RTC, System.currentTimeMillis() + AlarmManager.INTERVAL_FIFTEEN_MINUTES,
+            AlarmManager.INTERVAL_FIFTEEN_MINUTES, poll);
     }
 
     static void refresh(Context ctx) {
         final Context app = ctx.getApplicationContext();
         final SharedPreferences prefs = app.getSharedPreferences("w", Context.MODE_PRIVATE);
         scheduleMidnight(app);
-        draw(app, prefs.getString("json", null), true);
+        draw(app, prefs.getString("json", null));
         new Thread(() -> {
             try {
                 HttpURLConnection c = (HttpURLConnection)
@@ -242,7 +248,7 @@ public class ProteinWidget extends AppWidgetProvider {
             c.drawText("HEUTE", L, y, small);
             Paint sr = new Paint(small);
             sr.setTextAlign(Paint.Align.RIGHT);
-            c.drawText(datum + (stand.isEmpty() ? "" : "  ·  ⟳ " + stand), R, y, sr);
+            c.drawText(datum, R, y, sr);
 
             y += 30 * s;
             y = row(c, s, L, R, y, "PROTEIN", pH, pZ, " g", th.accentP, small);
