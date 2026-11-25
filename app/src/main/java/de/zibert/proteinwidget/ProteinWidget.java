@@ -34,32 +34,15 @@ public class ProteinWidget extends AppWidgetProvider {
     static final int MUTED = Color.argb(185, 245, 235, 225);
     static final int TRACK = Color.argb(45, 255, 255, 255);
 
-    // ---------- Themen ----------
-    static class Theme {
-        int top, bottom, glow, accentP, accentK, land;
-        String name;
+    // ---------- Themen (wechseln täglich) ----------
+    static final int[] BG = { R.drawable.bg01, R.drawable.bg02, R.drawable.bg03, R.drawable.bg04, R.drawable.bg05, R.drawable.bg06, R.drawable.bg07, R.drawable.bg08, R.drawable.bg09, R.drawable.bg10, R.drawable.bg11, R.drawable.bg12, R.drawable.bg13, R.drawable.bg14 };
+    static final int[][] ACC = { {0xFFFBBF24, 0xFF5ED6DC}, {0xFFFB9278, 0xFFFDE08C}, {0xFFFFB86B, 0xFF8FD3FF}, {0xFFFFB347, 0xFF9DB8FF}, {0xFFF5D27A, 0xFFE8E2D0}, {0xFFE0B8FF, 0xFFFFFFFF}, {0xFFFFFFFF, 0xFFFFD66B}, {0xFFCFD9F2, 0xFF8FB8FF}, {0xFFFFCF6A, 0xFFF2A0FF}, {0xFFFFD690, 0xFF9FE0FF}, {0xFFFFC24A, 0xFFFFFFFF}, {0xFFFFC21A, 0xFFBFE0FF}, {0xFFFF3D6E, 0xFFC9CED6}, {0xFF4ADE80, 0xFFA7F3D0} };
+    static int themeIndex() {
+        Calendar c = Calendar.getInstance();
+        long days = (c.getTimeInMillis() + c.get(Calendar.ZONE_OFFSET) + c.get(Calendar.DST_OFFSET)) / 86400000L;
+        return (int) (days % BG.length);
     }
-    static Theme theme(Context ctx) {
-        String t = ctx.getSharedPreferences("w", Context.MODE_PRIVATE).getString("theme", "outback");
-        Theme th = new Theme();
-        th.name = t;
-        if ("riff".equals(t)) {
-            th.top = Color.argb(235, 6, 28, 54);
-            th.bottom = Color.argb(235, 8, 112, 128);
-            th.glow = Color.argb(70, 94, 234, 212);
-            th.accentP = Color.rgb(251, 146, 120);   // Koralle
-            th.accentK = Color.rgb(253, 224, 140);   // Sand
-            th.land = Color.argb(60, 186, 255, 240);
-        } else {
-            th.top = Color.argb(235, 24, 20, 48);    // Nachthimmel
-            th.bottom = Color.argb(235, 176, 64, 24); // Outback-Rot
-            th.glow = Color.argb(110, 255, 170, 60);
-            th.accentP = Color.rgb(251, 191, 36);    // Gold
-            th.accentK = Color.rgb(94, 214, 220);    // Türkis
-            th.land = Color.argb(230, 92, 30, 14);   // Uluru
-        }
-        return th;
-    }
+    static Bitmap bgCache; static int bgCacheIdx = -1;
 
     @Override
     public void onUpdate(Context ctx, AppWidgetManager mgr, int[] ids) { refresh(ctx); }
@@ -133,7 +116,8 @@ public class ProteinWidget extends AppWidgetProvider {
         AppWidgetManager mgr = AppWidgetManager.getInstance(ctx);
         int[] ids = mgr.getAppWidgetIds(new ComponentName(ctx, ProteinWidget.class));
         float dens = ctx.getResources().getDisplayMetrics().density;
-        Theme th = theme(ctx);
+        int ti = themeIndex();
+        if (bgCacheIdx != ti) { bgCache = android.graphics.BitmapFactory.decodeResource(ctx.getResources(), BG[ti]); bgCacheIdx = ti; }
         for (int id : ids) {
             Bundle o = mgr.getAppWidgetOptions(id);
             int wDp = o.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 180);
@@ -143,7 +127,7 @@ public class ProteinWidget extends AppWidgetProvider {
             float scale = Math.min(dens, 900f / Math.max(wDp, hDp));
             int W = Math.round(wDp * scale), H = Math.round(hDp * scale);
             String stand = loading ? "lädt …" : ctx.getSharedPreferences("w", Context.MODE_PRIVATE).getString("stand", "");
-            Bitmap bmp = render(json, W, H, th, stand);
+            Bitmap bmp = render(json, W, H, ti, stand);
             RemoteViews v = new RemoteViews(ctx.getPackageName(), R.layout.widget);
             v.setImageViewBitmap(R.id.bild, bmp);
             Intent i = new Intent(ctx, ProteinWidget.class).setAction(ACTION_REFRESH);
@@ -165,96 +149,37 @@ public class ProteinWidget extends AppWidgetProvider {
         return p;
     }
 
-    static void background(Canvas c, int W, int H, float s, Theme th) {
+    static void shadow(Paint p, float s) { p.setShadowLayer(2.2f * s, 0.5f * s, 0.8f * s, Color.argb(170, 0, 0, 0)); }
+
+    static void background(Canvas c, int W, int H, float s) {
         RectF box = new RectF(0, 0, W, H);
         float rad = 22 * s;
         Path clip = new Path();
         clip.addRoundRect(box, rad, rad, Path.Direction.CW);
         c.save();
         c.clipPath(clip);
-        Paint g = new Paint(Paint.ANTI_ALIAS_FLAG);
-        g.setShader(new LinearGradient(0, 0, 0, H, th.top, th.bottom, Shader.TileMode.CLAMP));
-        c.drawRect(box, g);
-        // Sonne / Lichtschein
-        Paint glow = new Paint(Paint.ANTI_ALIAS_FLAG);
-        float gx = W * 0.78f, gy = H * 0.9f, gr = Math.max(W, H) * 0.55f;
-        glow.setShader(new RadialGradient(gx, gy, gr, th.glow, Color.TRANSPARENT, Shader.TileMode.CLAMP));
-        c.drawRect(box, glow);
-        Paint land = new Paint(Paint.ANTI_ALIAS_FLAG);
-        land.setColor(th.land);
-        if ("riff".equals(th.name)) {
-            land.setStyle(Paint.Style.STROKE);
-            land.setStrokeWidth(2.2f * s);
-            for (int k = 0; k < 3; k++) {
-                Path w = new Path();
-                float base = H - (10 + k * 9) * s;
-                w.moveTo(0, base);
-                for (float x = 0; x <= W; x += 4) {
-                    w.lineTo(x, base + (float) Math.sin(x / (22 * s) + k) * 3 * s);
-                }
-                land.setAlpha(70 - k * 18);
-                c.drawPath(w, land);
-            }
+        Bitmap bg = bgCache;
+        if (bg != null) {
+            float r = Math.max((float) W / bg.getWidth(), (float) H / bg.getHeight());
+            float bw = bg.getWidth() * r, bh = bg.getHeight() * r;
+            Paint pf = new Paint(Paint.FILTER_BITMAP_FLAG);
+            c.drawBitmap(bg, null, new RectF((W - bw) / 2, (H - bh) / 2, (W + bw) / 2, (H + bh) / 2), pf);
         } else {
-            // Uluru-Silhouette
-            Path u = new Path();
-            float bh = H - 4 * s;
-            float x0 = W * 0.42f, x1 = W * 1.02f, top = H - 26 * s;
-            u.moveTo(x0, bh + 6 * s);
-            u.cubicTo(x0 + 8 * s, top + 6 * s, x0 + 18 * s, top, x0 + 40 * s, top);
-            u.lineTo(x1 - 30 * s, top + 1 * s);
-            u.cubicTo(x1 - 14 * s, top + 2 * s, x1 - 6 * s, top + 10 * s, x1, bh + 6 * s);
-            u.close();
-            c.drawPath(u, land);
-            Paint ground = new Paint();
-            ground.setColor(Color.argb(200, 60, 18, 8));
-            c.drawRect(0, bh, W, H, ground);
-            // Kreuz des Südens
-            Paint star = new Paint(Paint.ANTI_ALIAS_FLAG);
-            star.setColor(Color.argb(150, 255, 255, 255));
-            float[][] sc = {{0.62f,0.06f},{0.66f,0.13f},{0.70f,0.075f},{0.645f,0.18f},{0.675f,0.105f}};
-            float sz = 1.6f * s;
-            for (int k = 0; k < sc.length; k++) {
-                c.drawCircle(W * sc[k][0], H * sc[k][1] + 4 * s, k == 4 ? sz * 0.6f : sz, star);
-            }
-            // Känguru
-            kangaroo(c, W * 0.08f, bh, 30 * s, Color.argb(235, 40, 12, 6));
+            c.drawColor(Color.rgb(20, 22, 28));
         }
         c.restore();
-        Paint edge = new Paint(Paint.ANTI_ALIAS_FLAG);
-        edge.setStyle(Paint.Style.STROKE);
-        edge.setStrokeWidth(1.2f * s);
-        edge.setColor(Color.argb(40, 255, 255, 255));
-        c.drawRoundRect(box, rad, rad, edge);
     }
 
-    static void kangaroo(Canvas c, float x, float groundY, float size, int color) {
-        float[][] pt = {
-            {0,92},{20,82},{40,70},{48,55},{55,40},{62,28},{64,20},{62,4},{67,14},{70,4},{71,16},
-            {80,19},{88,23},{90,27},{80,30},{71,34},{68,44},{77,50},{80,56},{73,54},{66,58},
-            {70,74},{75,88},{84,95},{93,98},{62,100},{55,93},{47,86},{20,92},{2,97}
-        };
-        float k = size / 100f;
-        float top = groundY - 100 * k;
-        Path p = new Path();
-        p.moveTo(x + pt[0][0] * k, top + pt[0][1] * k);
-        for (int i = 1; i < pt.length; i++) p.lineTo(x + pt[i][0] * k, top + pt[i][1] * k);
-        p.close();
-        Paint pa = new Paint(Paint.ANTI_ALIAS_FLAG);
-        pa.setColor(color);
-        pa.setPathEffect(new CornerPathEffect(2.5f * k));
-        c.drawPath(p, pa);
-    }
-
-    static Bitmap render(String json, int W, int H, Theme th, String stand) {
+    static Bitmap render(String json, int W, int H, int ti, String unused) {
         Bitmap b = Bitmap.createBitmap(W, H, Bitmap.Config.ARGB_8888);
         Canvas c = new Canvas(b);
         float s = Math.min(W / 220f, H / 218f);
-        background(c, W, H, s, th);
+        background(c, W, H, s);
+        int accP = ACC[ti][0], accK = ACC[ti][1];
 
         float L = 18 * s, R = W - 18 * s;
-        Paint small = text(MUTED, 9 * s, false);
-        small.setLetterSpacing(0.1f);
+        Paint small = text(MUTED, 10.5f * s, false);
+        shadow(small, s);
 
         if (json == null) {
             c.drawText("LÄDT …  TIPPEN ZUM AKTUALISIEREN", L, 30 * s, small);
@@ -278,50 +203,48 @@ public class ProteinWidget extends AppWidgetProvider {
             sr.setTextAlign(Paint.Align.RIGHT);
             sr.setColor(TEXT);
             String zuletzt = neuerTag ? "" : d.optString("zuletzt", "");
-            c.drawText(zuletzt.isEmpty() ? datum : datum + "  ·  " + zuletzt, R, y, sr);
+            c.drawText(zuletzt.isEmpty() ? datum : datum + " · " + zuletzt, R, y, sr);
 
-            y += 30 * s;
-            y = row(c, s, L, R, y, "PROTEIN", pH, pZ, " g", th.accentP, small);
-            y += 28 * s;
-            y = row(c, s, L, R, y, "KCAL", kH, kZ, "", th.accentK, small);
+            y = 60 * s;
+            y = row(c, s, L, R, y, "PROTEIN", pH, pZ, " g", accP, small);
+            y += 32 * s;
+            y = row(c, s, L, R, y, "KCAL", kH, kZ, "", accK, small);
 
-            // Noch übrig
-            y += 20 * s;
+            y += 23 * s;
             float restP = Math.max(0, pZ - pH), restK = Math.max(0, kZ - kH);
             String rest = (restP <= 0 && restK <= 0) ? "Alles geschafft 💪"
-                : "Noch " + Math.round(restP) + " g Protein  ·  " + Math.round(restK) + " kcal";
-            c.drawText(rest, L, y, text(TEXT, 10.5f * s, true));
+                : "Noch " + Math.round(restP) + " g  ·  " + Math.round(restK) + " kcal";
+            Paint rp = text(TEXT, 13 * s, true); shadow(rp, s);
+            c.drawText(rest, L, y, rp);
 
-            // Trennlinie
-            y += 12 * s;
+            y += 11 * s;
             Paint line = new Paint();
-            line.setColor(Color.argb(45, 255, 255, 255));
-            c.drawRect(L, y, R, y + Math.max(1.5f, 0.8f * s), line);
+            line.setColor(Color.argb(70, 255, 255, 255));
+            c.drawRect(L, y, R, y + Math.max(1.5f, 0.7f * s), line);
 
-            // Ø 7 Tage + Serie
-            y += 17 * s;
+            y += 19 * s;
             JSONObject avg = d.optJSONObject("schnitt");
             if (avg != null) {
                 c.drawText("Ø 7 TAGE", L, y, small);
                 float ap = (float) avg.optDouble("p", 0), ak = (float) avg.optDouble("k", 0);
-                Paint v = text(TEXT, 10.5f * s, true);
+                Paint v = text(TEXT, 12.5f * s, true); shadow(v, s);
                 v.setTextAlign(Paint.Align.RIGHT);
                 String kt = Math.round(ak) + " kcal";
-                v.setColor(ak >= kZ ? GREEN : th.accentK);
+                v.setColor(ak >= kZ ? GREEN : accK);
                 c.drawText(kt, R, y, v);
                 float kw = v.measureText(kt);
                 Paint dot = new Paint(small);
                 dot.setTextAlign(Paint.Align.RIGHT);
                 c.drawText("  ·  ", R - kw, y, dot);
                 float dw = dot.measureText("  ·  ");
-                v.setColor(ap >= pZ ? GREEN : th.accentP);
+                v.setColor(ap >= pZ ? GREEN : accP);
                 c.drawText(Math.round(ap) + " g", R - kw - dw, y, v);
             }
             int serie = d.optInt("serie", 0);
-            if (serie > 0 && y + 20 * s < H - 14 * s) {
-                y += 19 * s;
-                c.drawText("🔥 " + serie + (serie == 1 ? " Tag" : " Tage") + " Protein-Ziel in Folge",
-                    L, y, text(TEXT, 9.5f * s, false));
+            if (serie > 0) {
+                y += 20 * s;
+                Paint sp = text(TEXT, 11.5f * s, false); shadow(sp, s);
+                c.drawText("🔥 " + serie + (serie == 1 ? " Tag" : " Tage") + " Ziel in Folge", L, y, sp);
             }
         } catch (Exception e) {
             c.drawText("FEHLER BEIM LESEN", L, 30 * s, small);
@@ -334,23 +257,25 @@ public class ProteinWidget extends AppWidgetProvider {
         boolean done = val >= goal;
         int col = done ? GREEN : accent;
         c.drawText(done ? label + "  ✓" : label, L, y, small);
-        Paint big = text(col, 17 * s, true);
-        Paint rest = text(MUTED, 10 * s, false);
+        Paint big = text(col, 21 * s, true); shadow(big, s);
+        Paint rest = text(MUTED, 12 * s, false); shadow(rest, s);
         String r = " / " + Math.round(goal) + unit;
         float rw = rest.measureText(r);
         c.drawText(r, R - rw, y, rest);
         String v = String.valueOf(Math.round(val));
         c.drawText(v, R - rw - big.measureText(v), y, big);
-        float by = y + 8 * s;
-        float bh = 9 * s;
+        float by = y + 9 * s;
+        float bh = 10 * s;
         Paint p = new Paint(Paint.ANTI_ALIAS_FLAG);
-        p.setColor(TRACK);
+        p.setColor(Color.argb(95, 0, 0, 0));
         c.drawRoundRect(new RectF(L, by, R, by + bh), bh / 2, bh / 2, p);
-        float end = L + (R - L) * clamp(val / goal);
-        int light = Color.argb(255, Math.min(255, Color.red(col) + 40),
-            Math.min(255, Color.green(col) + 40), Math.min(255, Color.blue(col) + 40));
-        p.setShader(new LinearGradient(L, 0, end, 0, col, light, Shader.TileMode.CLAMP));
-        c.drawRoundRect(new RectF(L, by, end, by + bh), bh / 2, bh / 2, p);
+        p.setStyle(Paint.Style.STROKE);
+        p.setStrokeWidth(Math.max(1f, 0.5f * s));
+        p.setColor(Color.argb(45, 255, 255, 255));
+        c.drawRoundRect(new RectF(L, by, R, by + bh), bh / 2, bh / 2, p);
+        p.setStyle(Paint.Style.FILL);
+        p.setColor(col);
+        c.drawRoundRect(new RectF(L, by, L + (R - L) * clamp(val / goal), by + bh), bh / 2, bh / 2, p);
         return by + bh;
     }
 }
