@@ -270,9 +270,9 @@ public class ProteinWidget extends AppWidgetProvider {
 
             float y = 26 * s;
             c.drawText("HEUTE", L, y, small);
-            sr.setColor(TEXT);
             Paint sr = new Paint(small);
             sr.setTextAlign(Paint.Align.RIGHT);
+            sr.setColor(TEXT);
             String zuletzt = neuerTag ? "" : d.optString("zuletzt", "");
             c.drawText(zuletzt.isEmpty() ? datum : datum + "  ·  " + zuletzt, R, y, sr);
 
