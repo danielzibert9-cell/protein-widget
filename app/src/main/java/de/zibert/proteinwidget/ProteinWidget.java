@@ -96,7 +96,7 @@ public class ProteinWidget extends AppWidgetProvider {
         final Context app = ctx.getApplicationContext();
         final SharedPreferences prefs = app.getSharedPreferences("w", Context.MODE_PRIVATE);
         scheduleMidnight(app);
-        draw(app, prefs.getString("json", null));
+        draw(app, prefs.getString("json", null), true);
         new Thread(() -> {
             try {
                 HttpURLConnection c = (HttpURLConnection)
@@ -111,15 +111,19 @@ public class ProteinWidget extends AppWidgetProvider {
                 r.close();
                 String json = sb.toString();
                 new JSONObject(json);
-                prefs.edit().putString("json", json).apply();
+                String now = new SimpleDateFormat("HH:mm", Locale.GERMANY).format(new Date());
+                prefs.edit().putString("json", json).putString("stand", now).apply();
                 draw(app, json);
             } catch (Exception e) {
+                prefs.edit().putString("stand", "offline").apply();
                 draw(app, prefs.getString("json", null));
             }
         }).start();
     }
 
-    static void draw(Context ctx, String json) {
+    static void draw(Context ctx, String json) { draw(ctx, json, false); }
+
+    static void draw(Context ctx, String json, boolean loading) {
         AppWidgetManager mgr = AppWidgetManager.getInstance(ctx);
         int[] ids = mgr.getAppWidgetIds(new ComponentName(ctx, ProteinWidget.class));
         float dens = ctx.getResources().getDisplayMetrics().density;
@@ -132,7 +136,8 @@ public class ProteinWidget extends AppWidgetProvider {
             if (hDp <= 0) hDp = 180;
             float scale = Math.min(dens, 900f / Math.max(wDp, hDp));
             int W = Math.round(wDp * scale), H = Math.round(hDp * scale);
-            Bitmap bmp = render(json, W, H, th);
+            String stand = loading ? "lädt …" : ctx.getSharedPreferences("w", Context.MODE_PRIVATE).getString("stand", "");
+            Bitmap bmp = render(json, W, H, th, stand);
             RemoteViews v = new RemoteViews(ctx.getPackageName(), R.layout.widget);
             v.setImageViewBitmap(R.id.bild, bmp);
             Intent i = new Intent(ctx, ProteinWidget.class).setAction(ACTION_REFRESH);
@@ -207,7 +212,7 @@ public class ProteinWidget extends AppWidgetProvider {
         c.drawRoundRect(box, rad, rad, edge);
     }
 
-    static Bitmap render(String json, int W, int H, Theme th) {
+    static Bitmap render(String json, int W, int H, Theme th, String stand) {
         Bitmap b = Bitmap.createBitmap(W, H, Bitmap.Config.ARGB_8888);
         Canvas c = new Canvas(b);
         float s = Math.min(W / 220f, H / 218f);
@@ -237,8 +242,7 @@ public class ProteinWidget extends AppWidgetProvider {
             c.drawText("HEUTE", L, y, small);
             Paint sr = new Paint(small);
             sr.setTextAlign(Paint.Align.RIGHT);
-            String stand = neuerTag ? "" : d.optString("aktualisiert", "");
-            c.drawText(datum + (stand.isEmpty() ? "" : "  ·  " + stand), R, y, sr);
+            c.drawText(datum + (stand.isEmpty() ? "" : "  ·  ⟳ " + stand), R, y, sr);
 
             y += 30 * s;
             y = row(c, s, L, R, y, "PROTEIN", pH, pZ, " g", th.accentP, small);
