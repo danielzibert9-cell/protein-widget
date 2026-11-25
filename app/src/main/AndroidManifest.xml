@@ -12,7 +12,28 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <receiver android:name=".ProteinWidget" android:exported="true">
+        <receiver android:name=".ProteinWidget" android:exported="true" android:label="Protein – Heute">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider"
+                android:resource="@xml/protein_widget_info" />
+        </receiver>
+        <receiver android:name=".ProteinWidget$Gestern" android:exported="true" android:label="Protein – Gestern">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider"
+                android:resource="@xml/protein_widget_info" />
+        </receiver>
+        <receiver android:name=".ProteinWidget$Vorgestern" android:exported="true" android:label="Protein – Vorgestern">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider"
+                android:resource="@xml/protein_widget_info" />
+        </receiver>
+        <receiver android:name=".ProteinWidget$Vor3Tagen" android:exported="true" android:label="Protein – vor 3 Tagen">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>

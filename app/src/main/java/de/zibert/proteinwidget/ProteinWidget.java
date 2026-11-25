@@ -112,31 +112,51 @@ public class ProteinWidget extends AppWidgetProvider {
 
     static void draw(Context ctx, String json) { draw(ctx, json, false); }
 
+    static final Class<?>[] PROVIDER = { ProteinWidget.class, ProteinWidget.Gestern.class,
+        ProteinWidget.Vorgestern.class, ProteinWidget.Vor3Tagen.class };
+    static final java.util.HashMap<Integer, Bitmap> BGS = new java.util.HashMap<>();
+
+    static Bitmap bgFor(Context ctx, int ti) {
+        Bitmap b = BGS.get(ti);
+        if (b == null) {
+            if (BGS.size() > 4) BGS.clear();
+            b = android.graphics.BitmapFactory.decodeResource(ctx.getResources(), BG[ti]);
+            BGS.put(ti, b);
+        }
+        return b;
+    }
+
     static void draw(Context ctx, String json, boolean loading) {
         AppWidgetManager mgr = AppWidgetManager.getInstance(ctx);
-        int[] ids = mgr.getAppWidgetIds(new ComponentName(ctx, ProteinWidget.class));
         float dens = ctx.getResources().getDisplayMetrics().density;
-        int ti = themeIndex();
-        if (bgCacheIdx != ti) { bgCache = android.graphics.BitmapFactory.decodeResource(ctx.getResources(), BG[ti]); bgCacheIdx = ti; }
-        for (int id : ids) {
-            Bundle o = mgr.getAppWidgetOptions(id);
-            int wDp = o.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 180);
-            int hDp = o.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, 180);
-            if (wDp <= 0) wDp = 180;
-            if (hDp <= 0) hDp = 180;
-            float scale = Math.min(dens, 900f / Math.max(wDp, hDp));
-            int W = Math.round(wDp * scale), H = Math.round(hDp * scale);
-            String stand = loading ? "lädt …" : ctx.getSharedPreferences("w", Context.MODE_PRIVATE).getString("stand", "");
-            Bitmap bmp = render(json, W, H, ti, stand);
-            RemoteViews v = new RemoteViews(ctx.getPackageName(), R.layout.widget);
-            v.setImageViewBitmap(R.id.bild, bmp);
-            Intent i = new Intent(ctx, ProteinWidget.class).setAction(ACTION_REFRESH);
-            PendingIntent pi = PendingIntent.getBroadcast(ctx, 0, i,
-                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-            v.setOnClickPendingIntent(R.id.root, pi);
-            mgr.updateAppWidget(id, v);
+        for (int off = 0; off < PROVIDER.length; off++) {
+            int[] ids = mgr.getAppWidgetIds(new ComponentName(ctx, PROVIDER[off]));
+            if (ids.length == 0) continue;
+            int ti = (themeIndex() - off + BG.length * 4) % BG.length;
+            bgCache = bgFor(ctx, ti);
+            for (int id : ids) {
+                Bundle o = mgr.getAppWidgetOptions(id);
+                int wDp = o.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 180);
+                int hDp = o.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, 180);
+                if (wDp <= 0) wDp = 180;
+                if (hDp <= 0) hDp = 180;
+                float scale = Math.min(dens, 900f / Math.max(wDp, hDp));
+                int W = Math.round(wDp * scale), H = Math.round(hDp * scale);
+                Bitmap bmp = render(json, W, H, ti, "", off);
+                RemoteViews v = new RemoteViews(ctx.getPackageName(), R.layout.widget);
+                v.setImageViewBitmap(R.id.bild, bmp);
+                Intent i = new Intent(ctx, ProteinWidget.class).setAction(ACTION_REFRESH);
+                PendingIntent pi = PendingIntent.getBroadcast(ctx, 0, i,
+                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+                v.setOnClickPendingIntent(R.id.root, pi);
+                mgr.updateAppWidget(id, v);
+            }
         }
     }
+
+    public static class Gestern extends ProteinWidget {}
+    public static class Vorgestern extends ProteinWidget {}
+    public static class Vor3Tagen extends ProteinWidget {}
 
     static float clamp(float x) { return Math.max(0.03f, Math.min(1f, x)); }
 
@@ -170,7 +190,7 @@ public class ProteinWidget extends AppWidgetProvider {
         c.restore();
     }
 
-    static Bitmap render(String json, int W, int H, int ti, String unused) {
+    static Bitmap render(String json, int W, int H, int ti, String unused, int off) {
         Bitmap b = Bitmap.createBitmap(W, H, Bitmap.Config.ARGB_8888);
         Canvas c = new Canvas(b);
         float s = Math.min(W / 220f, H / 218f);
@@ -187,22 +207,43 @@ public class ProteinWidget extends AppWidgetProvider {
         }
         try {
             JSONObject d = new JSONObject(json);
-            String heute = new SimpleDateFormat("yyyy-MM-dd", Locale.GERMANY).format(new Date());
-            boolean neuerTag = !heute.equals(d.optString("datumIso", heute));
-            String datum = neuerTag
-                ? new SimpleDateFormat("dd.MM.", Locale.GERMANY).format(new Date())
-                : d.optString("datum", "");
-            float pH = neuerTag ? 0 : (float) d.optDouble("proteinHeute", 0);
-            float kH = neuerTag ? 0 : (float) d.optDouble("kcalHeute", 0);
+            Calendar cal = Calendar.getInstance();
+            cal.add(Calendar.DAY_OF_YEAR, -off);
+            Date ziel = cal.getTime();
+            String zielIso = new SimpleDateFormat("yyyy-MM-dd", Locale.GERMANY).format(ziel);
+            String datum = new SimpleDateFormat("dd.MM.", Locale.GERMANY).format(ziel);
             float pZ = (float) d.optDouble("proteinZiel", 140);
             float kZ = (float) d.optDouble("kcalZiel", 2500);
+            float pH = 0, kH = 0;
+            String zuletzt = "";
+            boolean gefunden = false;
+            if (zielIso.equals(d.optString("datumIso", ""))) {
+                pH = (float) d.optDouble("proteinHeute", 0);
+                kH = (float) d.optDouble("kcalHeute", 0);
+                zuletzt = off == 0 ? d.optString("zuletzt", "") : "";
+                gefunden = true;
+            } else {
+                org.json.JSONArray tage = d.optJSONArray("tage");
+                if (tage != null) for (int i = 0; i < tage.length(); i++) {
+                    JSONObject t = tage.getJSONObject(i);
+                    if (zielIso.equals(t.optString("datumIso"))) {
+                        pH = (float) t.optDouble("p", 0);
+                        kH = (float) t.optDouble("k", 0);
+                        pZ = (float) t.optDouble("pZ", pZ);
+                        kZ = (float) t.optDouble("kZ", kZ);
+                        gefunden = true;
+                        break;
+                    }
+                }
+            }
+            String[] LABEL = { "HEUTE", "GESTERN", "VORGESTERN", "VOR 3 TAGEN" };
+            String label = LABEL[Math.min(off, LABEL.length - 1)];
 
             float y = 26 * s;
-            c.drawText("HEUTE", L, y, small);
+            c.drawText(label, L, y, small);
             Paint sr = new Paint(small);
             sr.setTextAlign(Paint.Align.RIGHT);
             sr.setColor(TEXT);
-            String zuletzt = neuerTag ? "" : d.optString("zuletzt", "");
             c.drawText(zuletzt.isEmpty() ? datum : datum + " · " + zuletzt, R, y, sr);
 
             y = 60 * s;
@@ -212,8 +253,11 @@ public class ProteinWidget extends AppWidgetProvider {
 
             y += 23 * s;
             float restP = Math.max(0, pZ - pH), restK = Math.max(0, kZ - kH);
-            String rest = (restP <= 0 && restK <= 0) ? "Alles geschafft 💪"
-                : "Noch " + Math.round(restP) + " g  ·  " + Math.round(restK) + " kcal";
+            String rest;
+            if (off > 0 && !gefunden) rest = "Keine Daten für den Tag";
+            else if (restP <= 0 && restK <= 0) rest = off == 0 ? "Alles geschafft 💪" : "Ziel geschafft 💪";
+            else if (off == 0) rest = "Noch " + Math.round(restP) + " g  ·  " + Math.round(restK) + " kcal";
+            else rest = "Es fehlten " + Math.round(restP) + " g  ·  " + Math.round(restK) + " kcal";
             Paint rp = text(TEXT, 13 * s, true); shadow(rp, s);
             c.drawText(rest, L, y, rp);
 
