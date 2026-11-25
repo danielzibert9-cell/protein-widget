@@ -146,10 +146,6 @@ public class ProteinWidget extends AppWidgetProvider {
             Bitmap bmp = render(json, W, H, th, stand);
             RemoteViews v = new RemoteViews(ctx.getPackageName(), R.layout.widget);
             v.setImageViewBitmap(R.id.bild, bmp);
-            Intent i = new Intent(ctx, ProteinWidget.class).setAction(ACTION_REFRESH);
-            PendingIntent pi = PendingIntent.getBroadcast(ctx, 0, i,
-                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-            v.setOnClickPendingIntent(R.id.root, pi);
             mgr.updateAppWidget(id, v);
         }
     }
@@ -209,6 +205,16 @@ public class ProteinWidget extends AppWidgetProvider {
             Paint ground = new Paint();
             ground.setColor(Color.argb(200, 60, 18, 8));
             c.drawRect(0, bh, W, H, ground);
+            // Kreuz des Südens
+            Paint star = new Paint(Paint.ANTI_ALIAS_FLAG);
+            star.setColor(Color.argb(150, 255, 255, 255));
+            float[][] sc = {{0.62f,0.06f},{0.66f,0.13f},{0.70f,0.075f},{0.645f,0.18f},{0.675f,0.105f}};
+            float sz = 1.6f * s;
+            for (int k = 0; k < sc.length; k++) {
+                c.drawCircle(W * sc[k][0], H * sc[k][1] + 4 * s, k == 4 ? sz * 0.6f : sz, star);
+            }
+            // Känguru
+            kangaroo(c, W * 0.08f, bh, 30 * s, Color.argb(235, 40, 12, 6));
         }
         c.restore();
         Paint edge = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -216,6 +222,24 @@ public class ProteinWidget extends AppWidgetProvider {
         edge.setStrokeWidth(1.2f * s);
         edge.setColor(Color.argb(40, 255, 255, 255));
         c.drawRoundRect(box, rad, rad, edge);
+    }
+
+    static void kangaroo(Canvas c, float x, float groundY, float size, int color) {
+        float[][] pt = {
+            {0,92},{20,82},{40,70},{48,55},{55,40},{62,28},{64,20},{62,4},{67,14},{70,4},{71,16},
+            {80,19},{88,23},{90,27},{80,30},{71,34},{68,44},{77,50},{80,56},{73,54},{66,58},
+            {70,74},{75,88},{84,95},{93,98},{62,100},{55,93},{47,86},{20,92},{2,97}
+        };
+        float k = size / 100f;
+        float top = groundY - 100 * k;
+        Path p = new Path();
+        p.moveTo(x + pt[0][0] * k, top + pt[0][1] * k);
+        for (int i = 1; i < pt.length; i++) p.lineTo(x + pt[i][0] * k, top + pt[i][1] * k);
+        p.close();
+        Paint pa = new Paint(Paint.ANTI_ALIAS_FLAG);
+        pa.setColor(color);
+        pa.setPathEffect(new CornerPathEffect(2.5f * k));
+        c.drawPath(p, pa);
     }
 
     static Bitmap render(String json, int W, int H, Theme th, String stand) {
@@ -246,9 +270,11 @@ public class ProteinWidget extends AppWidgetProvider {
 
             float y = 26 * s;
             c.drawText("HEUTE", L, y, small);
+            sr.setColor(TEXT);
             Paint sr = new Paint(small);
             sr.setTextAlign(Paint.Align.RIGHT);
-            c.drawText(datum, R, y, sr);
+            String zuletzt = neuerTag ? "" : d.optString("zuletzt", "");
+            c.drawText(zuletzt.isEmpty() ? datum : datum + "  ·  " + zuletzt, R, y, sr);
 
             y += 30 * s;
             y = row(c, s, L, R, y, "PROTEIN", pH, pZ, " g", th.accentP, small);
