@@ -146,6 +146,10 @@ public class ProteinWidget extends AppWidgetProvider {
             Bitmap bmp = render(json, W, H, th, stand);
             RemoteViews v = new RemoteViews(ctx.getPackageName(), R.layout.widget);
             v.setImageViewBitmap(R.id.bild, bmp);
+            Intent i = new Intent(ctx, ProteinWidget.class).setAction(ACTION_REFRESH);
+            PendingIntent pi = PendingIntent.getBroadcast(ctx, 0, i,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+            v.setOnClickPendingIntent(R.id.root, pi);
             mgr.updateAppWidget(id, v);
         }
     }
