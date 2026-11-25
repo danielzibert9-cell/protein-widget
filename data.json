@@ -1,51 +1,51 @@
 {
-  "datum": "25.11.",
-  "proteinHeute": 48,
-  "kcalHeute": 548,
-  "proteinZiel": 140,
-  "kcalZiel": 2500,
-  "woche": [
-    {
-      "tag": "Do",
-      "p": 144,
-      "k": 2254
-    },
-    {
-      "tag": "Fr",
-      "p": 124,
-      "k": 2549
-    },
-    {
-      "tag": "Sa",
-      "p": 149,
-      "k": 2058
-    },
-    {
-      "tag": "So",
-      "p": 159,
-      "k": 2042
-    },
-    {
-      "tag": "Mo",
-      "p": 144,
-      "k": 2240
-    },
-    {
-      "tag": "Di",
-      "p": 149,
-      "k": 2103
-    },
-    {
-      "tag": "Mi",
-      "p": 48,
-      "k": 544
-    }
-  ],
-  "schnitt": {
-    "p": 139,
-    "k": 2207
+ "datum": "25.11.",
+ "proteinHeute": 86,
+ "kcalHeute": 1231,
+ "proteinZiel": 140,
+ "kcalZiel": 2500,
+ "woche": [
+  {
+   "tag": "Do",
+   "p": 144,
+   "k": 2254
   },
-  "datumIso": "2026-11-25",
-  "serie": 4,
-  "zuletzt": "Solo Zero"
+  {
+   "tag": "Fr",
+   "p": 124,
+   "k": 2549
+  },
+  {
+   "tag": "Sa",
+   "p": 149,
+   "k": 2058
+  },
+  {
+   "tag": "So",
+   "p": 159,
+   "k": 2042
+  },
+  {
+   "tag": "Mo",
+   "p": 144,
+   "k": 2240
+  },
+  {
+   "tag": "Di",
+   "p": 149,
+   "k": 2103
+  },
+  {
+   "tag": "Mi",
+   "p": 48,
+   "k": 544
+  }
+ ],
+ "schnitt": {
+  "p": 139,
+  "k": 2207
+ },
+ "datumIso": "2026-11-25",
+ "serie": 4,
+ "zuletzt": "Spätzle"
 }
