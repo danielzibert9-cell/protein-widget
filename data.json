@@ -1,7 +1,7 @@
 {
  "datum": "26.11.",
- "proteinHeute": 110,
- "kcalHeute": 2105,
+ "proteinHeute": 112,
+ "kcalHeute": 2230,
  "proteinZiel": 140,
  "kcalZiel": 2500,
  "woche": [
@@ -47,7 +47,7 @@
  },
  "datumIso": "2026-11-26",
  "serie": 5,
- "zuletzt": "Pizza",
+ "zuletzt": "Eis",
  "tage": [
   {
    "datumIso": "2026-11-25",
