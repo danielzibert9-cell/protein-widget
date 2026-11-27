@@ -1,7 +1,7 @@
 {
- "datum": "26.11.",
- "proteinHeute": 144,
- "kcalHeute": 2635,
+ "datum": "27.11.",
+ "proteinHeute": 56,
+ "kcalHeute": 929,
  "proteinZiel": 140,
  "kcalZiel": 2500,
  "woche": [
@@ -43,12 +43,19 @@
  ],
  "schnitt": {
   "p": 151,
-  "k": 2264
+  "k": 2318
  },
- "datumIso": "2026-11-26",
- "serie": 5,
- "zuletzt": "Nugatbits",
+ "datumIso": "2026-11-27",
+ "serie": 6,
+ "zuletzt": "Brezel",
  "tage": [
+  {
+   "datumIso": "2026-11-26",
+   "p": 144,
+   "k": 2635,
+   "pZ": 140,
+   "kZ": 2500
+  },
   {
    "datumIso": "2026-11-25",
    "p": 191,
@@ -60,13 +67,6 @@
    "datumIso": "2026-11-24",
    "p": 149,
    "k": 2103,
-   "pZ": 140,
-   "kZ": 2750
-  },
-  {
-   "datumIso": "2026-11-23",
-   "p": 144,
-   "k": 2240,
    "pZ": 140,
    "kZ": 2750
   }
