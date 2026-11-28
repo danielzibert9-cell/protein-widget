@@ -1,7 +1,7 @@
 {
   "datum": "28.11.",
-  "proteinHeute": 142,
-  "kcalHeute": 3157,
+  "proteinHeute": 150,
+  "kcalHeute": 3302,
   "proteinZiel": 140,
   "kcalZiel": 2500,
   "woche": [
@@ -47,7 +47,7 @@
   },
   "datumIso": "2026-11-28",
   "serie": 7,
-  "zuletzt": "Pfannkuchen",
+  "zuletzt": "Pancakes",
   "tage": [
     {
       "datumIso": "2026-11-27",
