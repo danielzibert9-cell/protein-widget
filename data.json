@@ -1,7 +1,7 @@
 {
- "datum": "27.11.",
- "proteinHeute": 56,
- "kcalHeute": 929,
+ "datum": "28.11.",
+ "proteinHeute": 48,
+ "kcalHeute": 544,
  "proteinZiel": 140,
  "kcalZiel": 2500,
  "woche": [
@@ -42,13 +42,20 @@
   }
  ],
  "schnitt": {
-  "p": 151,
-  "k": 2318
+  "p": 154,
+  "k": 2387
  },
- "datumIso": "2026-11-27",
- "serie": 6,
- "zuletzt": "Brezel",
+ "datumIso": "2026-11-28",
+ "serie": 7,
+ "zuletzt": "Shake",
  "tage": [
+  {
+   "datumIso": "2026-11-27",
+   "p": 145,
+   "k": 3034,
+   "pZ": 140,
+   "kZ": 2500
+  },
   {
    "datumIso": "2026-11-26",
    "p": 144,
@@ -62,13 +69,6 @@
    "k": 2600,
    "pZ": 140,
    "kZ": 2500
-  },
-  {
-   "datumIso": "2026-11-24",
-   "p": 149,
-   "k": 2103,
-   "pZ": 140,
-   "kZ": 2750
   }
  ]
 }
